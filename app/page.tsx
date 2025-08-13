@@ -10,6 +10,7 @@ async function getData(): Promise<WorkflowRow[]> {
       name: true,
       nodeCount: true,
       workflowJson: true, // Ensure this is selected for download
+      description: true, // Include description
       nodeTypes: { select: { name: true } },
       credentialsUsed: { select: { name: true } },
     },
@@ -24,6 +25,8 @@ async function getData(): Promise<WorkflowRow[]> {
     nodeTypes: w.nodeTypes.map((t) => t.name),
     credentialsUsed: w.credentialsUsed.map((c) => c.name),
     workflowJson: w.workflowJson,
+    workflowDescription: w.description || "", // Default to empty string if no description
+
   }));
 }
 

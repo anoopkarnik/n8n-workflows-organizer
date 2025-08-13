@@ -19,6 +19,7 @@ model Workflow {
   id        String   @id @default(cuid())
   name      String
   workflowId String  
+  description String?
   nodeCount Int
   workflowJson Json
   nodeTypes  NodeType[]

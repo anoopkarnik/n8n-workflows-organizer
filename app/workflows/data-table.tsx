@@ -35,6 +35,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { globalArraySearch } from "./columns";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -48,6 +49,7 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =React.useState<VisibilityState>({})
+  const [globalFilter, setGlobalFilter] = React.useState<string>("");
 const table = useReactTable({
     data,
     columns,
@@ -58,14 +60,17 @@ const table = useReactTable({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+      onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
+      globalFilter,
     },
+    globalFilterFn: globalArraySearch,
     initialState:{
       pagination:{
-        pageSize: 6
+        pageSize: 3
       }
     }
   })
@@ -76,32 +81,18 @@ const table = useReactTable({
         <div className="flex items-center flex-wrap gap-2 w-full">
           {/* Workflow Name search */}
             <Input
-              placeholder="Filter Workflow Name..."
+              placeholder="Search Workflow Name..."
               value={(table.getColumn("workflowName")?.getFilterValue() as string) ?? ""}
               onChange={(event) =>
                 table.getColumn("workflowName")?.setFilterValue(event.target.value)
               }
               className="max-w-xs"
             />
-
-            {/* Node Types search */}
             <Input
-              placeholder="Filter Node Types..."
-              value={(table.getColumn("nodeTypes")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("nodeTypes")?.setFilterValue(event.target.value)
-              }
-              className="max-w-xs"
-            />
-
-            {/* Credentials Used search */}
-            <Input
-              placeholder="Filter Credentials Used..."
-              value={(table.getColumn("credentialsUsed")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("credentialsUsed")?.setFilterValue(event.target.value)
-              }
-              className="max-w-xs"
+              placeholder="Search Node Types and Credentials"
+              value={globalFilter}
+              onChange={(e) => table.setGlobalFilter(e.target.value)}
+              className="max-w-md"
             />
 
         </div>

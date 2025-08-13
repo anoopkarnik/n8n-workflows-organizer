@@ -10,6 +10,7 @@ export type WorkflowRow = {
   id: string;
   workflowName: string;
   workflowJson: JsonValue;
+  workflowDescription: string;
   nodeCount: number;
   nodeTypes: string[];        // e.g. ["n8n-nodes-base.set", ...]      // e.g. ["gpt-4o", ...]
   credentialsUsed: string[];  // e.g. ["OpenAi account", ...]
@@ -31,12 +32,21 @@ const renderBadges = (values?: string[]) => {
 import { FilterFn } from "@tanstack/react-table";
 import { JsonValue } from "@prisma/client/runtime/library";
 
-// Custom array includes filter
-const arrayIncludes: FilterFn<any> = (row, columnId, filterValue) => {
-  const cellValue = row.getValue<string[]>(columnId) || [];
-  if (!filterValue) return true; // no filter applied
-  return cellValue.some((v) =>
-    v.toLowerCase().includes((filterValue as string).toLowerCase())
+
+export const globalArraySearch: FilterFn<any> = (row, _columnId, filterValue) => {
+  const q = String(filterValue ?? "").toLowerCase().trim();
+  if (!q) return true;
+
+  const nodeTypes = ((row.original.nodeTypes ?? []) as string[])
+    .join(" ")
+    .toLowerCase();
+  const creds = ((row.original.credentialsUsed ?? []) as string[])
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    nodeTypes.includes(q) ||
+    creds.includes(q)
   );
 };
 
@@ -84,7 +94,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.workflowName}</div>
+      <div className="font-medium text-md">{row.original.workflowName}</div>
     ),
     enableSorting: true,
     enableHiding: false,
@@ -111,14 +121,12 @@ export const columns: ColumnDef<WorkflowRow>[] = [
     header: "Node Types",
     cell: ({ row }) => renderBadges(row.original.nodeTypes),
     enableSorting: false,
-    filterFn: arrayIncludes
   },
   {
     accessorKey: "credentialsUsed",
     header: "Credentials",
     cell: ({ row }) => renderBadges(row.original.credentialsUsed),
     enableSorting: false,
-    filterFn: arrayIncludes
   },
   {
     accessorKey: "downloadWorkflow",
@@ -131,5 +139,11 @@ export const columns: ColumnDef<WorkflowRow>[] = [
         Download
       </Button>
     ),
-  }
+  },
+    {
+    accessorKey: "workflowDescription",
+    header: "Description",
+    cell: ({ row }) => <div className="font-light text-xs text-wrap">{row.original.workflowDescription}</div>,
+    enableSorting: false,
+  },
 ];

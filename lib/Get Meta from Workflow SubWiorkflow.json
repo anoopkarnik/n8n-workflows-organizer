@@ -1,0 +1,1250 @@
+{
+  "name": "Get Meta from Workflow SubWiorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1776,
+        240
+      ],
+      "id": "a9203c06-06ad-46ba-a08e-8af2ddabc7fc",
+      "name": "Loop Over Credentials Used"
+    },
+    {
+      "parameters": {
+        "tableId": "_CredentialUsedToWorkflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "A",
+              "fieldValue": "={{ $('Get a row based on CredentialUsed').item.json.id }}"
+            },
+            {
+              "fieldId": "B",
+              "fieldValue": "={{ $('Create a row').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        144
+      ],
+      "id": "3f7410f3-2770-4826-8a8d-84ddd16af034",
+      "name": "Create CredentialUsed Workflow Id Relation4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read the array from the previous \"Code\" node that generated meta\nconst credentialsUsed = $('Code').first().json.credentialsUsed || [];\n\n// Make sure they’re unique & clean\nconst uniq = arr => [...new Set(arr.filter(Boolean).map(v => String(v).trim()))];\nconst cleanCredentialsUsed = uniq(credentialsUsed);\n\n// Create 1 output item per nodeType\nreturn cleanCredentialsUsed.map(credential => ({\n  json: { credentialUsed: credential }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        96
+      ],
+      "id": "e62ced97-87c6-4ca8-882a-288eb261ce6c",
+      "name": "Get Credentials Used"
+    },
+    {
+      "parameters": {
+        "tableId": "_CredentialUsedToWorkflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "A",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "B",
+              "fieldValue": "={{ $('Create a row').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        48
+      ],
+      "id": "64653dd7-6750-434d-bdec-aabb9e1a3b6f",
+      "name": "Create CredentialUsed Workflow Id Relation5",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "CredentialUsed",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "keyValue": "={{ $json.credentialUsed }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        -32
+      ],
+      "id": "507dee35-0ce9-43d4-aab4-66ff27ca7fbe",
+      "name": "Get a row based on CredentialUsed",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(it => ({\n  json: {\n    ...it.json,\n    exists: Boolean(it.json?.id)\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -32
+      ],
+      "id": "186d78fe-c820-4dc0-b218-6304c2242729",
+      "name": "Does Model Used Exist in Supabase"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.exists }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    },
+                    "id": "42995ecf-cacd-4698-b686-0806e3bbc538"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Does not Exist"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0b2699d2-2f4c-4365-8f4c-3ba48d3eab6b",
+                    "leftValue": "={{ $json.exists }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Exists"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2448,
+        -32
+      ],
+      "id": "108e95cc-d42a-4937-ab20-738f92c20ccb",
+      "name": "Credential Exists"
+    },
+    {
+      "parameters": {
+        "tableId": "CredentialUsed",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ Math.random().toString(36)}}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Get Credentials Used').item.json.credentialUsed }}"
+            },
+            {
+              "fieldId": "createdAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        -64
+      ],
+      "id": "22346dcb-3772-4123-81a3-f1620d7d7c0c",
+      "name": "Create CredentialUsed Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1776,
+        -288
+      ],
+      "id": "96f13530-26d8-4cf3-af18-e0c0ffc6b28a",
+      "name": "Loop Over Node Types"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Input assumptions:\n * - Upstream \"Extract From JSON\" node placed the parsed file into $json.data\n * - If not, we fallback to $json or attempt JSON.parse on string input\n */\n\nfunction safeParse(maybeJson) {\n  if (typeof maybeJson === 'string') {\n    try { return JSON.parse(maybeJson); } catch { return {}; }\n  }\n  return maybeJson || {};\n}\n\nconst src = $('Start').first().json.data\nconst wf = safeParse(src);\nconst nodes = Array.isArray(wf.nodes) ? wf.nodes : [];\n\nconst summarizedNodes = nodes.map((n) => {\n  const credentials = n.credentials || {};\n  const credentialNames = Object.keys(credentials);\n\n  return {\n    id: n.id ?? null,\n    name: n.name ?? null,\n    type: n.type ?? null,\n    typeVersion: n.typeVersion ?? null,\n    position: n.position ?? null,\n    credentials: credentialNames,\n\n  };\n});\n\nconst uniq = (arr) => [...new Set(arr.filter(Boolean))];\n\nconst out = {\n  workflowName: wf.name ?? null,\n  workflowId: wf.id ?? wf.workflowId ?? null,\n  nodeCount: summarizedNodes.length,\n  nodeTypes: uniq(summarizedNodes.map(n => n.type)),\n  credentialsUsed: uniq(summarizedNodes.flatMap(n => n.credentials))\n  // full per‑node summary for your table / detail view\n  // Keep original raw if you want a \"Download JSON\" button from UI\n};\n\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -352
+      ],
+      "id": "a41ad7b9-1e1b-4c15-ab33-5a7423c2c1e4",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "tableId": "Workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.workflowName }}"
+            },
+            {
+              "fieldId": "workflowId",
+              "fieldValue": "={{ $json.workflowId }}"
+            },
+            {
+              "fieldId": "nodeCount",
+              "fieldValue": "={{ $json.nodeCount }}"
+            },
+            {
+              "fieldId": "workflowJson",
+              "fieldValue": "={{ JSON.stringify($('Start').item.json.data) }}"
+            },
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ Math.random().toString(36)}}"
+            },
+            {
+              "fieldId": "createdAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $('AI Agent').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -352
+      ],
+      "id": "c853a611-d850-4a0e-912c-b5ffc8742ace",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "_NodeTypeToWorkflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "A",
+              "fieldValue": "={{ $('Get a row based on NodeType').item.json.id }}"
+            },
+            {
+              "fieldId": "B",
+              "fieldValue": "={{ $('Create a row').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        -416
+      ],
+      "id": "7b9dcbec-3dbf-4f35-939e-24084df7ea84",
+      "name": "Create NodeType Workflow Id Relation",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read the array from the previous \"Code\" node that generated meta\nconst nodeTypes = $('Code').first().json.nodeTypes || [];\n\n// Make sure they’re unique & clean\nconst uniq = arr => [...new Set(arr.filter(Boolean).map(v => String(v).trim()))];\nconst cleanNodeTypes = uniq(nodeTypes);\n\n// Create 1 output item per nodeType\nreturn cleanNodeTypes.map(type => ({\n  json: { nodeType: type }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -464
+      ],
+      "id": "a22d0809-c2f2-450b-a0a1-ed7573c38dcb",
+      "name": "Get Node Types"
+    },
+    {
+      "parameters": {
+        "tableId": "_NodeTypeToWorkflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "A",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "B",
+              "fieldValue": "={{ $('Create a row').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        -512
+      ],
+      "id": "9f827333-0ce9-4262-9be8-86c32306750f",
+      "name": "Create NodeType Workflow Id Relation1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "NodeType",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "keyValue": "={{ $json.nodeType }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        -592
+      ],
+      "id": "c83dd85c-f336-44ec-b358-d02f99732021",
+      "name": "Get a row based on NodeType",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(it => ({\n  json: {\n    ...it.json,\n    exists: Boolean(it.json?.id)\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -592
+      ],
+      "id": "b54cfb48-c2a1-4f1a-be8b-7d3b8c9d1451",
+      "name": "Does Node type Exist in Supabase"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.exists }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    },
+                    "id": "42995ecf-cacd-4698-b686-0806e3bbc538"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Does not Exist"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0b2699d2-2f4c-4365-8f4c-3ba48d3eab6b",
+                    "leftValue": "={{ $json.exists }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Exists"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2448,
+        -592
+      ],
+      "id": "f1ae022c-7ff2-4a0a-b6d9-61df80302e3c",
+      "name": "Node Type Exist"
+    },
+    {
+      "parameters": {
+        "tableId": "NodeType",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ Math.random().toString(36)}}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Get Node Types').item.json.nodeType }}"
+            },
+            {
+              "fieldId": "createdAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        -608
+      ],
+      "id": "c59be53e-a53c-4ee2-8eee-cb5eba0ccbe8",
+      "name": "Create NodeType Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FKPUdkfRqoeahaJ9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "data",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "31519dd2-8d56-453c-b14b-09213ceb978f",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        480,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=N8N Workflow Json : {{ JSON.stringify($json.data) }}",
+        "options": {
+          "systemMessage": "=You are an assistant that summarizes n8n workflows.\n\nYou will be given a JSON export of an n8n workflow. Your task is to:\n1. Understand the workflow’s trigger, key steps, and integrations.\n2. Produce a few concise sentences describing the main purpose or goal and maybe steps of the workflow.\n3. Avoid technical detail.\n4. Use plain, non-technical language that’s easy to display in a UI.\n\nOutput format:\n- <Few sentences description>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        -352
+      ],
+      "id": "ad8bb427-3549-4b83-9f5c-dc3c03f47374",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        -160
+      ],
+      "id": "f7cc57e0-4385-491a-a6a7-94f1c7f9fbab",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XRuXkSB2mk3HQo6w",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Start": [
+      {
+        "json": {
+          "data": {
+            "name": "RAG Pipeline & Chatbot",
+            "nodes": [
+              {
+                "parameters": {
+                  "content": "# 1) RAG Pipeline & Chatbot",
+                  "height": 80,
+                  "width": 480,
+                  "color": 5
+                },
+                "type": "n8n-nodes-base.stickyNote",
+                "typeVersion": 1,
+                "position": [
+                  -180,
+                  -320
+                ],
+                "id": "bc1be2a2-0153-4a03-b072-c72a53c2c425",
+                "name": "Sticky Note"
+              },
+              {
+                "parameters": {
+                  "pollTimes": {
+                    "item": [
+                      {
+                        "mode": "everyMinute"
+                      }
+                    ]
+                  },
+                  "triggerOn": "specificFolder",
+                  "folderToWatch": {
+                    "__rl": true,
+                    "value": "1FTsF7Hl2fPouUz6mWMh-ZD0kgf-iJfLe",
+                    "mode": "list",
+                    "cachedResultName": "FAQ",
+                    "cachedResultUrl": "https://drive.google.com/drive/folders/1FTsF7Hl2fPouUz6mWMh-ZD0kgf-iJfLe"
+                  },
+                  "event": "fileCreated",
+                  "options": {}
+                },
+                "type": "n8n-nodes-base.googleDriveTrigger",
+                "typeVersion": 1,
+                "position": [
+                  -300,
+                  -100
+                ],
+                "id": "c4ff0c70-7093-495b-82d3-a1f8a8de41fe",
+                "name": "Google Drive Trigger",
+                "credentials": {
+                  "googleDriveOAuth2Api": {
+                    "id": "V2ewjiHO0o6xhQ2R",
+                    "name": "nateherk88@gmail.com"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "operation": "download",
+                  "fileId": {
+                    "__rl": true,
+                    "value": "={{ $json.id }}",
+                    "mode": "id"
+                  },
+                  "options": {}
+                },
+                "type": "n8n-nodes-base.googleDrive",
+                "typeVersion": 3,
+                "position": [
+                  -80,
+                  -100
+                ],
+                "id": "423fe340-4990-4435-9ce3-a92da010cba0",
+                "name": "Download File",
+                "credentials": {
+                  "googleDriveOAuth2Api": {
+                    "id": "V2ewjiHO0o6xhQ2R",
+                    "name": "nateherk88@gmail.com"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "mode": "insert",
+                  "pineconeIndex": {
+                    "__rl": true,
+                    "value": "sample",
+                    "mode": "list",
+                    "cachedResultName": "sample"
+                  },
+                  "options": {
+                    "pineconeNamespace": "FAQ"
+                  }
+                },
+                "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+                "typeVersion": 1.1,
+                "position": [
+                  140,
+                  -100
+                ],
+                "id": "da38a30c-8730-4a79-8058-eb00affe6537",
+                "name": "Pinecone Vector Store",
+                "credentials": {
+                  "pineconeApi": {
+                    "id": "87xHLzLON9BYVGHw",
+                    "name": "Demo 4/2"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+                "typeVersion": 1.2,
+                "position": [
+                  60,
+                  120
+                ],
+                "id": "4438c2d6-b2d1-4fa1-98cf-82c105c92c5e",
+                "name": "Embeddings OpenAI",
+                "credentials": {
+                  "openAiApi": {
+                    "id": "WnxUhaEPMn5hIsEp",
+                    "name": "Demo 4/2"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "dataType": "binary",
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+                "typeVersion": 1,
+                "position": [
+                  280,
+                  120
+                ],
+                "id": "a7fea062-ee44-442f-8b9d-9726a6098e43",
+                "name": "Default Data Loader"
+              },
+              {
+                "parameters": {
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+                "typeVersion": 1,
+                "position": [
+                  380,
+                  340
+                ],
+                "id": "08b9d836-5eb1-42a7-8cc0-30d4d1f6ea5b",
+                "name": "Recursive Character Text Splitter"
+              },
+              {
+                "parameters": {
+                  "options": {
+                    "systemMessage": "You are a helpful assistant"
+                  }
+                },
+                "type": "@n8n/n8n-nodes-langchain.agent",
+                "typeVersion": 1.8,
+                "position": [
+                  820,
+                  -100
+                ],
+                "id": "6693613b-3821-4c43-b0d3-5eb8ba9bffd9",
+                "name": "AI Agent"
+              },
+              {
+                "parameters": {
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+                "typeVersion": 1.1,
+                "position": [
+                  660,
+                  -100
+                ],
+                "id": "dd1ec800-d5c0-49bf-a55d-0c550cfe1250",
+                "name": "When chat message received",
+                "webhookId": "a3171267-791f-4b3b-b499-e03979296b9c"
+              },
+              {
+                "parameters": {
+                  "model": "anthropic/claude-3.5-sonnet",
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+                "typeVersion": 1,
+                "position": [
+                  860,
+                  120
+                ],
+                "id": "cc5bf795-9056-4bf3-a0a3-5cdaf6ab7ab4",
+                "name": "OpenRouter Chat Model",
+                "credentials": {
+                  "openRouterApi": {
+                    "id": "OKbg2dxiNxleXQic",
+                    "name": "Demo 4/2"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "mode": "retrieve-as-tool",
+                  "toolName": "knowledgeBase",
+                  "toolDescription": "Call this tool to access the policy and FAQ database",
+                  "pineconeIndex": {
+                    "__rl": true,
+                    "value": "sample",
+                    "mode": "list",
+                    "cachedResultName": "sample"
+                  },
+                  "options": {
+                    "pineconeNamespace": "FAQ"
+                  }
+                },
+                "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+                "typeVersion": 1.1,
+                "position": [
+                  1040,
+                  120
+                ],
+                "id": "e5a2023e-2183-470e-81fe-9f635d54075e",
+                "name": "Pinecone Vector Store1",
+                "credentials": {
+                  "pineconeApi": {
+                    "id": "87xHLzLON9BYVGHw",
+                    "name": "Demo 4/2"
+                  }
+                }
+              },
+              {
+                "parameters": {
+                  "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+                "typeVersion": 1.2,
+                "position": [
+                  1140,
+                  340
+                ],
+                "id": "1083a24d-a84c-4a95-b4dd-b81943c28d0c",
+                "name": "Embeddings OpenAI1",
+                "credentials": {
+                  "openAiApi": {
+                    "id": "WnxUhaEPMn5hIsEp",
+                    "name": "Demo 4/2"
+                  }
+                }
+              }
+            ],
+            "pinData": {},
+            "connections": {
+              "Google Drive Trigger": {
+                "main": [
+                  [
+                    {
+                      "node": "Download File",
+                      "type": "main",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Download File": {
+                "main": [
+                  [
+                    {
+                      "node": "Pinecone Vector Store",
+                      "type": "main",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Embeddings OpenAI": {
+                "ai_embedding": [
+                  [
+                    {
+                      "node": "Pinecone Vector Store",
+                      "type": "ai_embedding",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Default Data Loader": {
+                "ai_document": [
+                  [
+                    {
+                      "node": "Pinecone Vector Store",
+                      "type": "ai_document",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Recursive Character Text Splitter": {
+                "ai_textSplitter": [
+                  [
+                    {
+                      "node": "Default Data Loader",
+                      "type": "ai_textSplitter",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "When chat message received": {
+                "main": [
+                  [
+                    {
+                      "node": "AI Agent",
+                      "type": "main",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "OpenRouter Chat Model": {
+                "ai_languageModel": [
+                  [
+                    {
+                      "node": "AI Agent",
+                      "type": "ai_languageModel",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Pinecone Vector Store1": {
+                "ai_tool": [
+                  [
+                    {
+                      "node": "AI Agent",
+                      "type": "ai_tool",
+                      "index": 0
+                    }
+                  ]
+                ]
+              },
+              "Embeddings OpenAI1": {
+                "ai_embedding": [
+                  [
+                    {
+                      "node": "Pinecone Vector Store1",
+                      "type": "ai_embedding",
+                      "index": 0
+                    }
+                  ]
+                ]
+              }
+            },
+            "active": false,
+            "settings": {
+              "executionOrder": "v1"
+            },
+            "versionId": "883cc5ed-5a46-4be8-ab2b-130856864395",
+            "meta": {
+              "templateCredsSetupCompleted": true,
+              "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+            },
+            "id": "kJMk9nrFpUJTylN9",
+            "tags": []
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Get Node Types",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Credentials Used",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Node Types": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Node Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Credentials Used": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Credentials Used",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row based on NodeType": {
+      "main": [
+        [
+          {
+            "node": "Does Node type Exist in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does Node type Exist in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Node Type Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create NodeType Row": {
+      "main": [
+        [
+          {
+            "node": "Create NodeType Workflow Id Relation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create NodeType Workflow Id Relation": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Node Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create NodeType Workflow Id Relation1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Node Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Node Types": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get a row based on NodeType",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Credentials Used": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get a row based on CredentialUsed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row based on CredentialUsed": {
+      "main": [
+        [
+          {
+            "node": "Does Model Used Exist in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does Model Used Exist in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Credential Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Node Type Exist": {
+      "main": [
+        [
+          {
+            "node": "Create NodeType Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create NodeType Workflow Id Relation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Credential Exists": {
+      "main": [
+        [
+          {
+            "node": "Create CredentialUsed Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create CredentialUsed Workflow Id Relation4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CredentialUsed Row": {
+      "main": [
+        [
+          {
+            "node": "Create CredentialUsed Workflow Id Relation5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CredentialUsed Workflow Id Relation4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Credentials Used",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CredentialUsed Workflow Id Relation5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Credentials Used",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "18bf5516-eec6-4eaf-86fb-5f5974e8398f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "vqwSAHaq03oYp7Gm",
+  "tags": []
+}

@@ -50,19 +50,37 @@ Google Drive (JSON) ➜ n8n
 1. **Create account/project**: [app.supabase.com](https://app.supabase.com) → New Project  
 2. **Project REF**: visible in the project URL `https://<PROJECT-REF>.supabase.co`  
 3. **Region**: shown under **Settings → General**  
-4. **Database Password**: set during project creation (or rotate in **Settings → Database**)  
-5. **Service Role Key**: **Settings → API → service_role** (server-side only; use in n8n)  
-6. **Connection strings**: **Connect → (Prisma / psql)**
+4. **Create User, Permissions and Password**: Run the below sql query with your own password instead of "custom_password" in SQL Editor tab in the project 
+
+```sql
+-- Create custom user
+create user "prisma" with password 'custom_password' bypassrls createdb;
+
+-- extend prisma's privileges to postgres (necessary to view changes in Dashboard)
+grant "prisma" to "postgres";
+
+-- Grant it necessary permissions over the relevant schemas (public)
+grant usage on schema public to prisma;
+grant create on schema public to prisma;
+grant all on all tables in schema public to prisma;
+grant all on all routines in schema public to prisma;
+grant all on all sequences in schema public to prisma;
+alter default privileges for role postgres in schema public grant all on tables to prisma;
+alter default privileges for role postgres in schema public grant all on routines to prisma;
+alter default privileges for role postgres in schema public grant all on sequences to prisma;
+
+```
+
+5. **Service Role Key**: **Settings → API → service_role** (server-side only; use in n8n)
+6. **Connection strings**: Rename .env.example to .env in root folder and get those variables by clicking on connect in the navbar of the project. DATABASE_URL environment variable needs to be taken from Transaction pooler and DIRECT_URL needs to be take from Session Pooler.
 
 **Example `.env` values** (replace placeholders):
 
 ```env
 # Prisma (server-based local dev recommended)
-DATABASE_URL="postgresql://prisma.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:5432/postgres?sslmode=require"
-DIRECT_URL="postgresql://prisma:<PRISMA_DB_PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:5432/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres:<PRISMA_DB_PASSWORD>@db.<PROJECT_REF>@<REGION>.pooler.supabase.com:5432/postgres"
 ```
-
-> Tip: Create a dedicated DB user `prisma` in SQL editor if you prefer not to use `postgres`, then grant privileges on `public` schema.
 
 ---
 
@@ -72,15 +90,15 @@ DIRECT_URL="postgresql://prisma:<PRISMA_DB_PASSWORD>@db.<PROJECT_REF>.supabase.c
 2. Install deps:
 
 ```bash
-pnpm install
+npm install
 # or npm i / yarn
 ```
 
 3. Generate Prisma client & run migrations:
 
 ```bash
-pnpm prisma generate
-pnpm prisma migrate dev
+npm prisma generate
+npm prisma migrate dev
 ```
 
 ---
@@ -88,19 +106,17 @@ pnpm prisma migrate dev
 ## 6) Run the Next.js UI
 
 ```bash
-pnpm dev
+npm dev
 ```
 
 - Open [http://localhost:3000](http://localhost:3000)  
-- The page loads rows via Prisma: select `id, name, nodeCount` + related arrays, then maps to the table row type.  
-- Columns render badges for array fields; table has search inputs for name + array columns.
 
 ---
 
 ## 7) Import & run the n8n workflow
 
 1. Start n8n (Docker or binary)  
-2. **Import** the provided workflow JSON (menu → Import from file)  
+2. **Import** the provided workflows JSON provided in app/lib in the repo
 3. Set up **Google Drive OAuth** credential and point the **Drive Trigger** to your folder of workflow JSONs  
 4. Set up **Supabase** credential (use **Service Role Key** for server-side writes)  
 5. Workflow steps:
@@ -136,50 +152,11 @@ Once running, dropping an n8n workflow JSON into your Google Drive folder will i
 - **UI empty**: check that n8n inserted a Workflow row in Supabase  
 - **Duplicates**: ensure unique constraints on lookup + composite PK on join tables
 
----
+## 11) Deployment to Vercel
 
-## 11) Extending
-
-- Add `modelsUsed` to the UI by copying the `credentialsUsed` column and filter  
-- Add download buttons for `workflowJson`  
-- Add auth with NextAuth  
-- Add server-side pagination for large datasets
-
----
-
-## 12) Scripts
+- **Add the Environment Variables**: DATABASE_URL & DIRECT_URL
+- **Change Build Command before deploying in vercel import tab**:
 
 ```bash
-# dev
-npm run dev
-
-# prisma helpers
-npx run prisma generate
-npx prisma migrate dev
-npx prisma studio
+npx prisma migrate dev && npx prisma generate && npm run build 
 ```
-
----
-
-## 13) Environment summary
-
-Create `.env`:
-
-```env
-DATABASE_URL="postgresql://prisma.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:5432/postgres?sslmode=require"
-DIRECT_URL="postgresql://prisma:<PRISMA_DB_PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres?sslmode=require"
-```
-
-In **n8n** credentials:
-- **Supabase REST**: `https://<PROJECT-REF>.supabase.co/rest/v1` + `service_role` as Bearer  
-- **Google Drive OAuth**: standard OAuth app (Client ID/Secret) and grant access to your folder
-
----
-
-## 14) Import the example n8n workflow
-
-Use `Get Meta from Workflows.json` in this repo. It has:
-- Drive trigger  
-- JSON extract & summarize  
-- Supabase inserts  
-- Loops for node types and credentials

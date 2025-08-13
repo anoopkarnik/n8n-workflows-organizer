@@ -15,7 +15,7 @@
       "typeVersion": 3,
       "position": [
         16,
-        -8
+        -272
       ],
       "id": "c1131ca5-34c6-4cbb-97de-141634bbd6ae",
       "name": "Download file",
@@ -50,7 +50,7 @@
       "typeVersion": 1,
       "position": [
         -208,
-        -8
+        -272
       ],
       "id": "e78e0276-7b3a-4aad-848a-3e2aacce003b",
       "name": "Google Drive Trigger1",
@@ -70,550 +70,56 @@
       "typeVersion": 1,
       "position": [
         240,
-        -8
+        -272
       ],
       "id": "70e7aacf-7ec0-4379-beb8-22c6a5ad7755",
       "name": "Extract from File"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * Input assumptions:\n * - Upstream \"Extract From JSON\" node placed the parsed file into $json.data\n * - If not, we fallback to $json or attempt JSON.parse on string input\n */\n\nfunction safeParse(maybeJson) {\n  if (typeof maybeJson === 'string') {\n    try { return JSON.parse(maybeJson); } catch { return {}; }\n  }\n  return maybeJson || {};\n}\n\nconst src = $json?.data ?? $json ?? {};\nconst wf = safeParse(src);\nconst nodes = Array.isArray(wf.nodes) ? wf.nodes : [];\n\nconst summarizedNodes = nodes.map((n) => {\n  const credentials = n.credentials || {};\n  const credentialNames = Object.keys(credentials);\n\n  return {\n    id: n.id ?? null,\n    name: n.name ?? null,\n    type: n.type ?? null,\n    typeVersion: n.typeVersion ?? null,\n    position: n.position ?? null,\n    credentials: credentialNames,\n\n  };\n});\n\nconst uniq = (arr) => [...new Set(arr.filter(Boolean))];\n\nconst out = {\n  workflowName: wf.name ?? null,\n  workflowId: wf.id ?? wf.workflowId ?? null,\n  nodeCount: summarizedNodes.length,\n  nodeTypes: uniq(summarizedNodes.map(n => n.type)),\n  credentialsUsed: uniq(summarizedNodes.flatMap(n => n.credentials)),\n  // full per‑node summary for your table / detail view\n  // Keep original raw if you want a \"Download JSON\" button from UI\n};\n\nreturn [{ json: out }];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        464,
-        -8
-      ],
-      "id": "a41ad7b9-1e1b-4c15-ab33-5a7423c2c1e4",
-      "name": "Code"
-    },
-    {
-      "parameters": {
-        "tableId": "Workflow",
-        "fieldsUi": {
-          "fieldValues": [
+        "workflowId": {
+          "__rl": true,
+          "value": "vqwSAHaq03oYp7Gm",
+          "mode": "list",
+          "cachedResultName": "Get Meta from Workflow SubWiorkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": "={{ $('Extract from File').item.json.data }}"
+          },
+          "matchingColumns": [
+            "data",
+            ""
+          ],
+          "schema": [
             {
-              "fieldId": "name",
-              "fieldValue": "={{ $json.workflowName }}"
-            },
-            {
-              "fieldId": "workflowId",
-              "fieldValue": "={{ $json.workflowId }}"
-            },
-            {
-              "fieldId": "nodeCount",
-              "fieldValue": "={{ $json.nodeCount }}"
-            },
-            {
-              "fieldId": "workflowJson",
-              "fieldValue": "={{ JSON.stringify($('Extract from File').item.json.data) }}"
-            },
-            {
-              "fieldId": "id",
-              "fieldValue": "={{ Math.random().toString(36)}}"
-            },
-            {
-              "fieldId": "createdAt",
-              "fieldValue": "={{ $now }}"
-            },
-            {
-              "fieldId": "updatedAt",
-              "fieldValue": "={{ $now }}"
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
             }
-          ]
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
         }
       },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
       "position": [
-        688,
-        -8
-      ],
-      "id": "c853a611-d850-4a0e-912c-b5ffc8742ace",
-      "name": "Create a row",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Read the array from the previous \"Code\" node that generated meta\nconst nodeTypes = $('Code').first().json.nodeTypes || [];\n\n// Make sure they’re unique & clean\nconst uniq = arr => [...new Set(arr.filter(Boolean).map(v => String(v).trim()))];\nconst cleanNodeTypes = uniq(nodeTypes);\n\n// Create 1 output item per nodeType\nreturn cleanNodeTypes.map(type => ({\n  json: { nodeType: type }\n}));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        912,
+        512,
         -272
       ],
-      "id": "a22d0809-c2f2-450b-a0a1-ed7573c38dcb",
-      "name": "Get Node Types"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Read the array from the previous \"Code\" node that generated meta\nconst credentialsUsed = $('Code').first().json.credentialsUsed || [];\n\n// Make sure they’re unique & clean\nconst uniq = arr => [...new Set(arr.filter(Boolean).map(v => String(v).trim()))];\nconst cleanCredentialsUsed = uniq(credentialsUsed);\n\n// Create 1 output item per nodeType\nreturn cleanCredentialsUsed.map(credential => ({\n  json: { credentialUsed: credential }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        912,
-        280
-      ],
-      "id": "e62ced97-87c6-4ca8-882a-288eb261ce6c",
-      "name": "Get Credentials Used"
-    },
-    {
-      "parameters": {
-        "operation": "get",
-        "tableId": "NodeType",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "name",
-              "keyValue": "={{ $json.nodeType }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1360,
-        -512
-      ],
-      "id": "c83dd85c-f336-44ec-b358-d02f99732021",
-      "name": "Get a row based on NodeType",
-      "alwaysOutputData": true,
-      "executeOnce": false,
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "return $input.all().map(it => ({\n  json: {\n    ...it.json,\n    exists: Boolean(it.json?.id)\n  }\n}));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1584,
-        -512
-      ],
-      "id": "b54cfb48-c2a1-4f1a-be8b-7d3b8c9d1451",
-      "name": "Does Node type Exist in Supabase"
-    },
-    {
-      "parameters": {
-        "tableId": "NodeType",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "id",
-              "fieldValue": "={{ Math.random().toString(36)}}"
-            },
-            {
-              "fieldId": "name",
-              "fieldValue": "={{ $('Get Node Types').item.json.nodeType }}"
-            },
-            {
-              "fieldId": "createdAt",
-              "fieldValue": "={{ $now }}"
-            },
-            {
-              "fieldId": "updatedAt",
-              "fieldValue": "={{ $now }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2032,
-        -608
-      ],
-      "id": "c59be53e-a53c-4ee2-8eee-cb5eba0ccbe8",
-      "name": "Create NodeType Row",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "tableId": "_NodeTypeToWorkflow",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "A",
-              "fieldValue": "={{ $('Get a row based on NodeType').item.json.id }}"
-            },
-            {
-              "fieldId": "B",
-              "fieldValue": "={{ $('Create a row').item.json.id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2032,
-        -416
-      ],
-      "id": "7b9dcbec-3dbf-4f35-939e-24084df7ea84",
-      "name": "Create NodeType Workflow Id Relation",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "tableId": "_NodeTypeToWorkflow",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "A",
-              "fieldValue": "={{ $json.id }}"
-            },
-            {
-              "fieldId": "B",
-              "fieldValue": "={{ $('Create a row').item.json.id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2256,
-        -440
-      ],
-      "id": "9f827333-0ce9-4262-9be8-86c32306750f",
-      "name": "Create NodeType Workflow Id Relation1",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1136,
-        -272
-      ],
-      "id": "96f13530-26d8-4cf3-af18-e0c0ffc6b28a",
-      "name": "Loop Over Node Types"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1136,
-        280
-      ],
-      "id": "a9203c06-06ad-46ba-a08e-8af2ddabc7fc",
-      "name": "Loop Over Credentials Used"
-    },
-    {
-      "parameters": {
-        "operation": "get",
-        "tableId": "CredentialUsed",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "name",
-              "keyValue": "={{ $json.credentialUsed }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1360,
-        40
-      ],
-      "id": "507dee35-0ce9-43d4-aab4-66ff27ca7fbe",
-      "name": "Get a row based on CredentialUsed",
-      "alwaysOutputData": true,
-      "executeOnce": false,
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "return $input.all().map(it => ({\n  json: {\n    ...it.json,\n    exists: Boolean(it.json?.id)\n  }\n}));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1584,
-        40
-      ],
-      "id": "186d78fe-c820-4dc0-b218-6304c2242729",
-      "name": "Does Model Used Exist in Supabase"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.exists }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "false",
-                      "singleValue": true
-                    },
-                    "id": "42995ecf-cacd-4698-b686-0806e3bbc538"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Does not Exist"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "0b2699d2-2f4c-4365-8f4c-3ba48d3eab6b",
-                    "leftValue": "={{ $json.exists }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Exists"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        1808,
-        -512
-      ],
-      "id": "f1ae022c-7ff2-4a0a-b6d9-61df80302e3c",
-      "name": "Node Type Exist"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.exists }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "false",
-                      "singleValue": true
-                    },
-                    "id": "42995ecf-cacd-4698-b686-0806e3bbc538"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Does not Exist"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "0b2699d2-2f4c-4365-8f4c-3ba48d3eab6b",
-                    "leftValue": "={{ $json.exists }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Exists"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        1808,
-        40
-      ],
-      "id": "108e95cc-d42a-4937-ab20-738f92c20ccb",
-      "name": "Credential Exists"
-    },
-    {
-      "parameters": {
-        "tableId": "CredentialUsed",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "id",
-              "fieldValue": "={{ Math.random().toString(36)}}"
-            },
-            {
-              "fieldId": "name",
-              "fieldValue": "={{ $('Get Credentials Used').item.json.credentialUsed }}"
-            },
-            {
-              "fieldId": "createdAt",
-              "fieldValue": "={{ $now }}"
-            },
-            {
-              "fieldId": "updatedAt",
-              "fieldValue": "={{ $now }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2032,
-        -56
-      ],
-      "id": "22346dcb-3772-4123-81a3-f1620d7d7c0c",
-      "name": "Create CredentialUsed Row",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "tableId": "_CredentialUsedToWorkflow",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "A",
-              "fieldValue": "={{ $('Get a row based on CredentialUsed').item.json.id }}"
-            },
-            {
-              "fieldId": "B",
-              "fieldValue": "={{ $('Create a row').item.json.id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2032,
-        136
-      ],
-      "id": "3f7410f3-2770-4826-8a8d-84ddd16af034",
-      "name": "Create CredentialUsed Workflow Id Relation4",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "tableId": "_CredentialUsedToWorkflow",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "A",
-              "fieldValue": "={{ $json.id }}"
-            },
-            {
-              "fieldId": "B",
-              "fieldValue": "={{ $('Create a row').item.json.id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        2256,
-        112
-      ],
-      "id": "64653dd7-6750-434d-bdec-aabb9e1a3b6f",
-      "name": "Create CredentialUsed Workflow Id Relation5",
-      "credentials": {
-        "supabaseApi": {
-          "id": "FKPUdkfRqoeahaJ9",
-          "name": "Supabase account"
-        }
-      }
+      "name": "Call Get Meta from Workflow SubWiorkflow",
+      "id": "dfb4b38d-16ad-46c9-996a-9c1351cfa472"
     }
   ],
   "pinData": {
@@ -710,38 +216,806 @@
             }
           },
           "kind": "drive#file",
-          "id": "1W4VX2usL8OqZigvzJJMpr9ghSwZVxNGl",
-          "name": "1) RAG Pipeline & Chatbot.json",
+          "id": "1-blKPtO6Q48br1xG_srpKicXqU0xFf_e",
+          "name": "10) Product Videos.json",
           "mimeType": "application/json",
           "starred": false,
           "trashed": false,
           "explicitlyTrashed": false,
           "version": "2",
-          "webContentLink": "https://drive.google.com/uc?id=1W4VX2usL8OqZigvzJJMpr9ghSwZVxNGl&export=download",
-          "webViewLink": "https://drive.google.com/file/d/1W4VX2usL8OqZigvzJJMpr9ghSwZVxNGl/view?usp=drivesdk",
+          "webContentLink": "https://drive.google.com/uc?id=1-blKPtO6Q48br1xG_srpKicXqU0xFf_e&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1-blKPtO6Q48br1xG_srpKicXqU0xFf_e/view?usp=drivesdk",
           "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
           "hasThumbnail": false,
           "thumbnailVersion": "0",
           "viewedByMe": true,
-          "viewedByMeTime": "2025-08-13T12:46:18.680Z",
-          "createdTime": "2025-08-13T12:46:18.680Z",
-          "modifiedTime": "2025-05-22T21:24:24.000Z",
-          "modifiedByMeTime": "2025-05-22T21:24:24.000Z",
+          "viewedByMeTime": "2025-08-13T16:22:55.140Z",
+          "createdTime": "2025-08-13T16:22:55.140Z",
+          "modifiedTime": "2025-05-22T21:30:20.000Z",
+          "modifiedByMeTime": "2025-05-22T21:30:20.000Z",
           "modifiedByMe": true,
           "shared": false,
           "ownedByMe": true,
           "viewersCanCopyContent": true,
           "copyRequiresWriterPermission": false,
           "writersCanShare": true,
-          "originalFilename": "1) RAG Pipeline & Chatbot.json",
+          "originalFilename": "10) Product Videos.json",
           "fullFileExtension": "json",
           "fileExtension": "json",
-          "md5Checksum": "451a7c721b6395452e03a94db3307a23",
-          "sha1Checksum": "2b716462c231a9752f2177c6a6df459581ac02ed",
-          "sha256Checksum": "585e56abf1a8aaa63c6122f91d2b71160cdc76e8414c0fa266b4019413fd4c27",
-          "size": "8249",
-          "quotaBytesUsed": "8249",
-          "headRevisionId": "0B9aAXn76VO6DWHZrVHlaWklrdTBiME5Ud3RoTFBJQURXTmRJPQ",
+          "md5Checksum": "f183858c8e8ae33807b70c389e0d27f6",
+          "sha1Checksum": "218cc1252b1d2fb2a7ec175b66d61014ff3a869d",
+          "sha256Checksum": "ce6217c8c200275c01105411c63d0d291f933821fa881b15169a353689a11198",
+          "size": "20375",
+          "quotaBytesUsed": "20375",
+          "headRevisionId": "0B9aAXn76VO6DREQ3U3NnbjAxQlV3V0Q0eVN4QnJXSzh3VTUwPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1q8D9xT8CTDLGYvXY4m-ZYJYugpHedye8",
+          "name": "9) OpenAI Image Gen.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1q8D9xT8CTDLGYvXY4m-ZYJYugpHedye8&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1q8D9xT8CTDLGYvXY4m-ZYJYugpHedye8/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:52.676Z",
+          "createdTime": "2025-08-13T16:22:52.676Z",
+          "modifiedTime": "2025-05-22T21:29:48.000Z",
+          "modifiedByMeTime": "2025-05-22T21:29:48.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "9) OpenAI Image Gen.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "ce72ae67ce6b7811928e18a8985edcf7",
+          "sha1Checksum": "3478a030d9ddf2de16d013a6d0aa8e91f329a4b6",
+          "sha256Checksum": "c6dc3e2e170d809bba9b1386a7ad568bbb4474a32fcd5124266908b3f287b723",
+          "size": "17623",
+          "quotaBytesUsed": "17623",
+          "headRevisionId": "0B9aAXn76VO6DUXQ5NEU0K2FSWGJyaE9KR0hIejVpZ3pXREM0PQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1kfxIQmhbWRdmV4h_0vxTU1AjOTJ97aZi",
+          "name": "8) Apify.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1kfxIQmhbWRdmV4h_0vxTU1AjOTJ97aZi&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1kfxIQmhbWRdmV4h_0vxTU1AjOTJ97aZi/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:53.964Z",
+          "createdTime": "2025-08-13T16:22:53.964Z",
+          "modifiedTime": "2025-05-22T21:29:20.000Z",
+          "modifiedByMeTime": "2025-05-22T21:29:20.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "8) Apify.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "71f6a1fcac2d4edaf0d1b9cd7f8dd0bb",
+          "sha1Checksum": "e58f3471b054f4cab82167eaecf3680ebaf48df2",
+          "sha256Checksum": "c2fa443cd6d579b8de084b4151b6b99e3db7b3118edb6944872ee7bc6deed0c9",
+          "size": "5326",
+          "quotaBytesUsed": "5326",
+          "headRevisionId": "0B9aAXn76VO6DRHJwdnEzSXhGMHFJa2N6N0pXdWs4Mmo5QkRvPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1NfKnlKJ4exhQfRVpYz9Wwkqu5z1-292l",
+          "name": "6) Perplexity.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1NfKnlKJ4exhQfRVpYz9Wwkqu5z1-292l&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1NfKnlKJ4exhQfRVpYz9Wwkqu5z1-292l/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:55.140Z",
+          "createdTime": "2025-08-13T16:22:55.140Z",
+          "modifiedTime": "2025-05-22T21:28:41.000Z",
+          "modifiedByMeTime": "2025-05-22T21:28:41.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "6) Perplexity.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "569523e3285d9e822a867649e7149ba5",
+          "sha1Checksum": "2f89b7259527c6ece2ef0ecde3b744190ebbc32d",
+          "sha256Checksum": "b40e5fef6919a14b6f27491b430d8401a9519439c52accb4744e7067c39b5831",
+          "size": "2846",
+          "quotaBytesUsed": "2846",
+          "headRevisionId": "0B9aAXn76VO6DY2x4L1VsTDB4R0V1enRpUW1sNy81dU1uZ2lVPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1cwvKrlp2-Wuv_aTTpaS_K91FwjnkvgdL",
+          "name": "7) Firecrawl Extract Template.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1cwvKrlp2-Wuv_aTTpaS_K91FwjnkvgdL&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1cwvKrlp2-Wuv_aTTpaS_K91FwjnkvgdL/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:55.140Z",
+          "createdTime": "2025-08-13T16:22:55.140Z",
+          "modifiedTime": "2025-05-22T21:26:55.000Z",
+          "modifiedByMeTime": "2025-05-22T21:26:55.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "7) Firecrawl Extract Template.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "00a4b9efe116a24acc5c8fe6a8f5495c",
+          "sha1Checksum": "bb699b88ac62041de0ce2d5146753cceff9865f6",
+          "sha256Checksum": "d92c7f341a3b66368310c150e3706df9f75b01a1da6c7dffc52ffda7ff58edb3",
+          "size": "6951",
+          "quotaBytesUsed": "6951",
+          "headRevisionId": "0B9aAXn76VO6DUmFWK2FzcWZKVGZFWWxpQ3dsN1dzSmMvb1lRPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1AOGVcZrR3mXy_FM6EihorAU376WZYEM-",
+          "name": "5) API Calls in n8n.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1AOGVcZrR3mXy_FM6EihorAU376WZYEM-&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1AOGVcZrR3mXy_FM6EihorAU376WZYEM-/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:55.140Z",
+          "createdTime": "2025-08-13T16:22:55.140Z",
+          "modifiedTime": "2025-05-22T21:26:24.000Z",
+          "modifiedByMeTime": "2025-05-22T21:26:24.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "5) API Calls in n8n.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "c6d3bede4e6097939397d63e1195022b",
+          "sha1Checksum": "0ce0acbc83ef332255be46f77359a652ac9d82c9",
+          "sha256Checksum": "86adb0c14c57abdb2f9c3ddd3fb648e569f95b67f2632ce41f4ef84e0c7006e9",
+          "size": "8312",
+          "quotaBytesUsed": "8312",
+          "headRevisionId": "0B9aAXn76VO6DNFNLRDNUR09UK3lBZEZXKzJ2d2svUTdBZmEwPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      },
+      {
+        "json": {
+          "parents": [
+            "1Jhw4QcW6h5liFgylNRYKU_qcvjvBwjuJ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Anoop Dasika",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17747780452508802148",
+            "emailAddress": "anoop.karnik@bayesian-labs.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Anoop Dasika",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17747780452508802148",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "17747780452508802148",
+              "type": "user",
+              "emailAddress": "anoop.karnik@bayesian-labs.com",
+              "role": "owner",
+              "displayName": "Anoop Dasika",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocKk5vheoZCV8Hm1S9qwFzJyC0P_Vml7_syMi4It-utqs8mMmg=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "17747780452508802148"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1QYTDgx2ReMqGdGWIU7C7DHZJ_kFSWd4b",
+          "name": "4) Invoice Workflow.json",
+          "mimeType": "application/json",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "2",
+          "webContentLink": "https://drive.google.com/uc?id=1QYTDgx2ReMqGdGWIU7C7DHZJ_kFSWd4b&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1QYTDgx2ReMqGdGWIU7C7DHZJ_kFSWd4b/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/json",
+          "hasThumbnail": false,
+          "thumbnailVersion": "0",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-08-13T16:22:55.140Z",
+          "createdTime": "2025-08-13T16:22:55.140Z",
+          "modifiedTime": "2025-05-22T21:25:29.000Z",
+          "modifiedByMeTime": "2025-05-22T21:25:29.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "4) Invoice Workflow.json",
+          "fullFileExtension": "json",
+          "fileExtension": "json",
+          "md5Checksum": "df7a9520ca1d79c34273bbc586b5b018",
+          "sha1Checksum": "6a26c5a075d04d13ffc3dfff350dd8e39e461443",
+          "sha256Checksum": "7e5214b242900468812e21124099d36b5ffbb5b44475544b8517b29ca17a9f94",
+          "size": "9164",
+          "quotaBytesUsed": "9164",
+          "headRevisionId": "0B9aAXn76VO6DRjNlYjlTS3ZRNFQ0dldQNmh0VnBsdWZadlVBPQ",
           "isAppAuthorized": false,
           "inheritedPermissionsDisabled": false
         }
@@ -775,230 +1049,16 @@
       "main": [
         [
           {
-            "node": "Code",
+            "node": "Call Get Meta from Workflow SubWiorkflow",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code": {
+    "Call Get Meta from Workflow SubWiorkflow": {
       "main": [
-        [
-          {
-            "node": "Create a row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create a row": {
-      "main": [
-        [
-          {
-            "node": "Get Node Types",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Credentials Used",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Node Types": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Node Types",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Credentials Used": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Credentials Used",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get a row based on NodeType": {
-      "main": [
-        [
-          {
-            "node": "Does Node type Exist in Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Does Node type Exist in Supabase": {
-      "main": [
-        [
-          {
-            "node": "Node Type Exist",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create NodeType Row": {
-      "main": [
-        [
-          {
-            "node": "Create NodeType Workflow Id Relation1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create NodeType Workflow Id Relation": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Node Types",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create NodeType Workflow Id Relation1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Node Types",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Node Types": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Get a row based on NodeType",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Credentials Used": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Get a row based on CredentialUsed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get a row based on CredentialUsed": {
-      "main": [
-        [
-          {
-            "node": "Does Model Used Exist in Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Does Model Used Exist in Supabase": {
-      "main": [
-        [
-          {
-            "node": "Credential Exists",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Node Type Exist": {
-      "main": [
-        [
-          {
-            "node": "Create NodeType Row",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create NodeType Workflow Id Relation",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Credential Exists": {
-      "main": [
-        [
-          {
-            "node": "Create CredentialUsed Row",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create CredentialUsed Workflow Id Relation4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create CredentialUsed Row": {
-      "main": [
-        [
-          {
-            "node": "Create CredentialUsed Workflow Id Relation5",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create CredentialUsed Workflow Id Relation4": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Credentials Used",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create CredentialUsed Workflow Id Relation5": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Credentials Used",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     }
   },
@@ -1006,7 +1066,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "06471263-0e70-43ec-b678-e8dc35135525",
+  "versionId": "92289724-2193-47cf-8be6-e22b516fb403",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"

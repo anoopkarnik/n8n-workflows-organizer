@@ -78,8 +78,8 @@ alter default privileges for role postgres in schema public grant all on sequenc
 
 ```env
 # Prisma (server-based local dev recommended)
-DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:5432/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres:<PRISMA_DB_PASSWORD>@db.<PROJECT_REF>@<REGION>.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.<PROJECT_REF>:<PRISMA_DB_PASSWORD>@<REGION>.pooler.supabase.com:5432/postgres"
 ```
 
 ---

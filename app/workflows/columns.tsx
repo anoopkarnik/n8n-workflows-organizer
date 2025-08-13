@@ -9,6 +9,7 @@ import { ArrowUpDown } from "lucide-react";
 export type WorkflowRow = {
   id: string;
   workflowName: string;
+  workflowJson: JsonValue;
   nodeCount: number;
   nodeTypes: string[];        // e.g. ["n8n-nodes-base.set", ...]      // e.g. ["gpt-4o", ...]
   credentialsUsed: string[];  // e.g. ["OpenAi account", ...]
@@ -28,6 +29,7 @@ const renderBadges = (values?: string[]) => {
 };
 
 import { FilterFn } from "@tanstack/react-table";
+import { JsonValue } from "@prisma/client/runtime/library";
 
 // Custom array includes filter
 const arrayIncludes: FilterFn<any> = (row, columnId, filterValue) => {
@@ -37,6 +39,34 @@ const arrayIncludes: FilterFn<any> = (row, columnId, filterValue) => {
     v.toLowerCase().includes((filterValue as string).toLowerCase())
   );
 };
+
+function handleDownload(jsonData: any) {
+  try {
+    // Convert to a pretty-printed JSON string
+    const jsonParsed = JSON.parse(jsonData);
+    const jsonString = JSON.stringify(jsonParsed, null, 2);
+
+    // Create a Blob from the string
+    const blob = new Blob([jsonString], { type: "application/json" });
+
+    // Create a temporary object URL
+    const url = URL.createObjectURL(blob);
+
+    // Create a link element and trigger the download
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "workflow.json"; // filename for download
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Error downloading JSON:", err);
+  }
+}
+
 
 
 export const columns: ColumnDef<WorkflowRow>[] = [
@@ -90,4 +120,16 @@ export const columns: ColumnDef<WorkflowRow>[] = [
     enableSorting: false,
     filterFn: arrayIncludes
   },
+  {
+    accessorKey: "downloadWorkflow",
+    header: "Download",
+    cell: ({ row }) => (
+      <Button className="cursor-pointer"
+        variant="outline"
+        onClick={() => handleDownload(row.original.workflowJson)}
+      >
+        Download
+      </Button>
+    ),
+  }
 ];

@@ -65,7 +65,7 @@ const table = useReactTable({
     },
     initialState:{
       pagination:{
-        pageSize: 10
+        pageSize: 6
       }
     }
   })

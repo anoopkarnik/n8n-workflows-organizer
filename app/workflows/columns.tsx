@@ -1,21 +1,23 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { JsonValue } from "@prisma/client/runtime/library";
 
-// Shape of each row coming from your API
+// ------------ TYPES ------------
 export type WorkflowRow = {
   id: string;
   workflowName: string;
   workflowJson: JsonValue;
   workflowDescription: string;
   nodeCount: number;
-  nodeTypes: string[];        // e.g. ["n8n-nodes-base.set", ...]      // e.g. ["gpt-4o", ...]
-  credentialsUsed: string[];  // e.g. ["OpenAi account", ...]
+  nodeTypes: string[];
+  credentialsUsed: string[];
 };
 
+// ------------ RENDER ------------
 const renderBadges = (values?: string[]) => {
   if (!values?.length) return <span className="text-muted-foreground">—</span>;
   return (
@@ -29,121 +31,94 @@ const renderBadges = (values?: string[]) => {
   );
 };
 
-import { FilterFn } from "@tanstack/react-table";
-import { JsonValue } from "@prisma/client/runtime/library";
+// ------------ FILTER FNs ------------
+// OR mode: show row if it contains ANY selected value
+export const arrayIncludesAny: FilterFn<any> = (row, columnId, filterValue) => {
+  const selected = (filterValue as string[]) ?? [];
+  if (selected.length === 0) return true;
+  const cell = (row.getValue<string[]>(columnId) ?? []).map((s) => s.toLowerCase());
+  return selected.some((s) => cell.includes(s.toLowerCase()));
+};
 
-
-export const globalArraySearch: FilterFn<any> = (row, _columnId, filterValue) => {
-  const q = String(filterValue ?? "").toLowerCase().trim();
-  if (!q) return true;
-
-  const nodeTypes = ((row.original.nodeTypes ?? []) as string[])
-    .join(" ")
-    .toLowerCase();
-  const creds = ((row.original.credentialsUsed ?? []) as string[])
-    .join(" ")
-    .toLowerCase();
-
-  return (
-    nodeTypes.includes(q) ||
-    creds.includes(q)
-  );
+// AND mode (optional): show row only if it contains ALL selected values
+export const arrayIncludesAll: FilterFn<any> = (row, columnId, filterValue) => {
+  const selected = (filterValue as string[]) ?? [];
+  if (selected.length === 0) return true;
+  const cell = (row.getValue<string[]>(columnId) ?? []).map((s) => s.toLowerCase());
+  return selected.every((s) => cell.includes(s.toLowerCase()));
 };
 
 function handleDownload(jsonData: any) {
   try {
-    // Convert to a pretty-printed JSON string
-    const jsonParsed = JSON.parse(jsonData);
-    const jsonString = JSON.stringify(jsonParsed, null, 2);
-
-    // Create a Blob from the string
+    const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
+    const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
-
-    // Create a temporary object URL
     const url = URL.createObjectURL(blob);
-
-    // Create a link element and trigger the download
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "workflow.json"; // filename for download
-    document.body.appendChild(link);
-    link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "workflow.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
     console.error("Error downloading JSON:", err);
   }
 }
 
-
-
 export const columns: ColumnDef<WorkflowRow>[] = [
   {
     accessorKey: "workflowName",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Workflow Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => (
-      <div className="font-medium text-md">{row.original.workflowName}</div>
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Workflow Name <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
     ),
+    cell: ({ row }) => <div className="font-medium text-md">{row.original.workflowName}</div>,
     enableSorting: true,
     enableHiding: false,
   },
   {
     accessorKey: "nodeCount",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Nodes
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Nodes <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => <span>{getValue<number>()}</span>,
     enableSorting: true,
     size: 80,
   },
+  // 👇 these two get filtered by string[] values via setFilterValue([...])
   {
     accessorKey: "nodeTypes",
     header: "Node Types",
     cell: ({ row }) => renderBadges(row.original.nodeTypes),
     enableSorting: false,
+    filterFn: arrayIncludesAny, // OR mode (switch to arrayIncludesAll if you prefer)
   },
   {
     accessorKey: "credentialsUsed",
     header: "Credentials",
     cell: ({ row }) => renderBadges(row.original.credentialsUsed),
     enableSorting: false,
+    filterFn: arrayIncludesAny, // OR mode
   },
   {
     accessorKey: "downloadWorkflow",
     header: "Download",
     cell: ({ row }) => (
-      <Button className="cursor-pointer"
-        variant="outline"
-        onClick={() => handleDownload(row.original.workflowJson)}
-      >
+      <Button className="cursor-pointer" variant="outline" onClick={() => handleDownload(row.original.workflowJson)}>
         Download
       </Button>
     ),
   },
-    {
+  {
     accessorKey: "workflowDescription",
     header: "Description",
-    cell: ({ row }) => <div className="font-light text-xs text-wrap">{row.original.workflowDescription}</div>,
+    cell: ({ row }) => (
+      <div className="font-light text-xs text-wrap">{row.original.workflowDescription}</div>
+    ),
     enableSorting: false,
   },
 ];

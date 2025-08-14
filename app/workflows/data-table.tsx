@@ -35,7 +35,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { globalArraySearch } from "./columns";
+import MultiSelect from "@/components/multiselect";
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -49,7 +50,6 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =React.useState<VisibilityState>({})
-  const [globalFilter, setGlobalFilter] = React.useState<string>("");
 const table = useReactTable({
     data,
     columns,
@@ -60,20 +60,35 @@ const table = useReactTable({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-      onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      globalFilter,
     },
-    globalFilterFn: globalArraySearch,
     initialState:{
       pagination:{
         pageSize: 3
       }
     }
   })
+
+
+  // Build unique option lists from pre-filtered rows
+  const preRows = table.getPreFilteredRowModel().flatRows as any[];
+  const unique = (arr: string[]) => Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
+
+  const nodeTypeOptions = unique(
+    preRows.flatMap((r) => (Array.isArray(r.original.nodeTypes) ? r.original.nodeTypes : []))
+  );
+  const credentialOptions = unique(
+    preRows.flatMap((r) =>
+      Array.isArray(r.original.credentialsUsed) ? r.original.credentialsUsed : []
+    )
+  );
+
+  // Read current filter values (string[]) for each column
+  const nodeTypeSelected = (table.getColumn("nodeTypes")?.getFilterValue() as string[]) ?? [];
+  const credSelected = (table.getColumn("credentialsUsed")?.getFilterValue() as string[]) ?? [];
 
   return (
     <>
@@ -88,11 +103,25 @@ const table = useReactTable({
               }
               className="max-w-xs"
             />
+          <MultiSelect
+            title="Filter Node Types"
+            options={nodeTypeOptions}
+            values={nodeTypeSelected}
+            onChange={(next) => table.getColumn("nodeTypes")?.setFilterValue(next)}
+          />
+          <MultiSelect
+            title="Filter Credentials"
+            options={credentialOptions}
+            values={credSelected}
+            onChange={(next) => table.getColumn("credentialsUsed")?.setFilterValue(next)}
+          />
             <Input
-              placeholder="Search Node Types and Credentials"
-              value={globalFilter}
-              onChange={(e) => table.setGlobalFilter(e.target.value)}
-              className="max-w-md"
+              placeholder="Search Workflow Description..."
+              value={(table.getColumn("workflowDescription")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("workflowDescription")?.setFilterValue(event.target.value)
+              }
+              className="max-w-xs"
             />
 
         </div>
@@ -167,7 +196,39 @@ const table = useReactTable({
           </TableBody>
         </Table>
     </div>
-    <div className="flex items-center justify-end space-x-2 py-4">
+    <div className="flex items-center justify-between py-4">
+  {/* Left: counts */}
+      <div className="text-sm text-muted-foreground">
+        {(() => {
+          const total = table.getPreFilteredRowModel().rows.length;
+          const filtered = table.getFilteredRowModel().rows.length;
+          const { pageIndex, pageSize } = table.getState().pagination;
+          const pageCount = table.getRowModel().rows.length; // rows on current page
+          const start = filtered === 0 ? 0 : pageIndex * pageSize + 1;
+          const end = pageIndex * pageSize + pageCount;
+
+          if (filtered === total) {
+            return (
+              <>
+                Showing <span className="font-medium">{start}</span>–
+                <span className="font-medium">{end}</span> of{" "}
+                <span className="font-medium">{total}</span> items
+              </>
+            );
+          }
+          return (
+            <>
+              Showing <span className="font-medium">{start}</span>–
+              <span className="font-medium">{end}</span> of{" "}
+              <span className="font-medium">{filtered}</span> filtered items
+              {" "}(<span className="font-medium">{total}</span> total)
+            </>
+          );
+        })()}
+      </div>
+
+      {/* Right: pager */}
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -185,6 +246,7 @@ const table = useReactTable({
           Next
         </Button>
       </div>
+    </div>
     </>
   )
 }

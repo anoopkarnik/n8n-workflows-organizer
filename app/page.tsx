@@ -1,4 +1,5 @@
 // app/(wherever)/page.tsx
+export const revalidate = 10;
 import { prisma } from "@/lib/prisma";
 import { columns, WorkflowRow } from "./workflows/columns";
 import { DataTable } from "./workflows/data-table";
